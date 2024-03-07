@@ -14,7 +14,7 @@ import java.util.Set;
 @NoArgsConstructor
 @Entity
 @Table(name = "role")
-public class Role implements GrantedAuthority {
+public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,8 +26,5 @@ public class Role implements GrantedAuthority {
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL)
     private List<User> users;
 
-    @Override
-    public String getAuthority() {
-        return authority;
-    }
+
 }
