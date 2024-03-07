@@ -1,5 +1,6 @@
 package com.workintech.eCommerceBackend.config;
 
+import com.workintech.eCommerceBackend.repository.UserRepository;
 import com.workintech.eCommerceBackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -21,23 +22,31 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
-//    @Autowired
-//    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public PasswordEncoder passwordEncoder(){
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    public AuthenticationManager authManager(UserDetailsService userDetailsService){
-//        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-//        provider.setUserDetailsService(userDetailsService);
-//        provider.setPasswordEncoder(passwordEncoder());
-//        return new ProviderManager(provider);
-//    }
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity.csrf((csrf) -> csrf.disable())
+    public UserDetailsService userDetailsService(){
+        return new UserService(userRepository);
+    }
+
+    @Bean
+    public AuthenticationManager authManager(UserDetailsService userDetailsService){
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(provider);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception{
+        return http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers(HttpMethod.POST, "/v1/categories/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/v1/categories/**").permitAll();
@@ -69,8 +78,17 @@ public class SecurityConfig {
                     auth.requestMatchers(HttpMethod.DELETE, "/v1/cards/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
-                .formLogin(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults())
+                .formLogin(Customizer.withDefaults())
+                .authenticationProvider(daoAuthenticationProvider()) // Set the authentication provider
                 .build();
+
+    }
+    @Bean
+    public DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService());
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 }
