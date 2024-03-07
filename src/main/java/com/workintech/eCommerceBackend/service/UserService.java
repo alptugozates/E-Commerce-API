@@ -6,21 +6,27 @@ import com.workintech.eCommerceBackend.exception.UserException;
 import com.workintech.eCommerceBackend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private UserRepository userRepository;
+    private AuthenticationService authenticationService;
+
 
     @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.authenticationService = authenticationService;
     }
 
     public List<UserDto> getAllUsers() {
@@ -71,4 +77,11 @@ public class UserService {
         }
     }
 
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + email));
+
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), new ArrayList<>());
+    }
 }
